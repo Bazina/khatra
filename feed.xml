@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ar">
+  <title>خاطرة</title>
+  <subtitle>خواطر مطوّلة: تجارب، وقراءة، وما يعلق في الذهن فيستحق أن يُكتب.</subtitle>
+  <link href="https://youssefbazina.github.io/khatra/feed.xml" rel="self"/>
+  <link href="https://youssefbazina.github.io/khatra/"/>
+  <id>https://youssefbazina.github.io/khatra/</id>
+  <updated>2026-09-07T00:00:00Z</updated>
+  <author><name>يوسف بازينة</name></author>
+  <entry>
+    <title>خاطرة رقم ١ - سنة الجيش: الضغط والحرارة والفحم والماس</title>
+    <link href="https://youssefbazina.github.io/khatra/khatra-1/"/>
+    <id>https://youssefbazina.github.io/khatra/khatra-1/</id>
+    <updated>2026-09-07T00:00:00Z</updated>
+    <summary>سنة الجيش لا تُختزل في خطوة معتادة وشدّ خدمة. ضغط يكشف من يذكرك، ويقرّبك من الله، ويعرّفك معنى الفريق.</summary>
+    <author><name>يوسف بازينة</name></author>
+  </entry>
+</feed>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="author" content="يوسف بازينة">
+<meta name="description" content="وصف قصير يظهر في الصفحة الرئيسية وفي روابط المشاركة.">
+<title>خاطرة رقم ن - العنوان</title>
+<link rel="canonical" href="https://youssefbazina.github.io/khatra/SLUG/">
+
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ar_AR">
+<meta property="og:site_name" content="خاطرة">
+<meta property="og:title" content="خاطرة رقم ن - العنوان">
+<meta property="og:description" content="وصف قصير يظهر في الصفحة الرئيسية وفي روابط المشاركة.">
+<meta property="og:url" content="https://youssefbazina.github.io/khatra/SLUG/">
+<meta property="article:published_time" content="2026-01-01T00:00:00Z">
+<meta property="article:author" content="يوسف بازينة">
+<meta property="article:section" content="خواطر">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="خاطرة رقم ن">
+<meta name="twitter:description" content="وصف قصير يظهر في الصفحة الرئيسية وفي روابط المشاركة.">
+
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="alternate" type="application/atom+xml" title="خاطرة" href="../feed.xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/khatra.css">
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<article class="article">
+
+  <header class="article-header">
+    <div class="kicker rise rise-1">خاطرة رقم ن</div>
+    <h1 class="article-title rise rise-2">العنوان</h1>
+    <p class="article-standfirst rise rise-3">جملة أو جملتان تفتحان الخاطرة.</p>
+    <div class="article-meta rise rise-3">
+      التاريخ · <span class="rt">قراءة</span>
+    </div>
+  </header>
+
+  <!-- صورة افتتاحية اختيارية
+  <figure class="hero">
+    <img src="hero.jpg" alt="">
+    <figcaption>التعليق والمصدر</figcaption>
+  </figure>
+  -->
+
+  <div class="prose">
+
+    <p>الفقرة الأولى — أول حرف فيها يصير حرفًا مزخرفًا تلقائيًا.</p>
+
+    <h2>عنوان فرعي</h2>
+
+    <p>نص، و<strong>تشديد</strong>، و<em>لفظ ملوّن</em>، و<a href="#">رابط</a>، و<code>code</code>.</p>
+
+    <div class="pull">اقتباس بارز يوقف القارئ.</div>
+
+    <blockquote>
+      نقل عن مصدر.
+      <cite>القائل</cite>
+    </blockquote>
+
+    <div class="def">
+      <div class="def-label">تعريف</div>
+      <p>صندوق جانبي للتعريفات والملاحظات.</p>
+    </div>
+
+    <div class="demo">
+      <div class="demo-title">تجربة تفاعلية</div>
+      <div class="demo-note">اكتب هنا HTML و JavaScript خاصًا بهذه الخاطرة فقط.</div>
+      <button type="button">اضغط</button>
+    </div>
+
+    <div class="divider">۞</div>
+
+    <p>الخاتمة.<span class="fn">١</span></p>
+
+    <div class="notes">
+      <div class="notes-title">حواشٍ</div>
+      <ol>
+        <li>نص الحاشية.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <footer class="article-footer">
+    <a class="back" href="../">← كل الخواطر</a>
+  </footer>
+
+</article>
+
+<script>
+(function(){
+  var bar=document.getElementById('progress');
+  var tick=function(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';
+  };
+  addEventListener('scroll',tick,{passive:true});
+  tick();
+})();
+</script>
+
+</body>
+</html>
