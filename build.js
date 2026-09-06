@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SITE = {
-  url: 'https://youssefbazina.github.io/khatra',
+  url: 'https://bazina.github.io/khatra',
   title: 'خاطرة',
   subtitle: 'خواطر مطوّلة: تجارب، وقراءة، وما يعلق في الذهن فيستحق أن يُكتب.',
   author: 'يوسف بازينة',
