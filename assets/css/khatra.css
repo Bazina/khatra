@@ -438,13 +438,6 @@ th{
   font-family:var(--display);
   font-size:1.05rem;
   color:var(--ink);
-  margin-bottom:6px;
-}
-.footer-desc{
-  font-family:var(--sans);
-  font-size:0.7rem;
-  font-weight:300;
-  color:var(--muted);
   margin-bottom:20px;
 }
 .footer-links{
