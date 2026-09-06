@@ -77,10 +77,10 @@ const readPost = (slug) => {
   };
 };
 
-const stampReadingTime = (post) => {
-  const updated = post.html.replace(
-    /(<span class="rt">)[^<]*(<\/span>)/,
-    `$1${readingLabel(post.minutes)}$2`
+const renderPost = (post) => {
+  const updated = withFooter(
+    post.html.replace(/(<span class="rt">)[^<]*(<\/span>)/, `$1${readingLabel(post.minutes)}$2`),
+    '../'
   );
   if (updated !== post.html) fs.writeFileSync(post.file, updated);
 };
@@ -110,6 +110,13 @@ const renderFeedList = (posts) => {
   return chunks.join('\n');
 };
 
+const FOOTER = fs.readFileSync(path.join(ROOT, '_template', 'footer.html'), 'utf8').trimEnd();
+
+const withFooter = (html, base) => html.replace(
+  /<!-- FOOTER:START -->[\s\S]*?<!-- FOOTER:END -->/,
+  `<!-- FOOTER:START -->\n${FOOTER.replace(/\{\{BASE\}\}/g, base)}\n<!-- FOOTER:END -->`
+);
+
 const writeHomepage = (posts) => {
   const file = path.join(ROOT, 'index.html');
   const html = fs.readFileSync(file, 'utf8');
@@ -117,7 +124,7 @@ const writeHomepage = (posts) => {
     /<!-- POSTS:START -->[\s\S]*?<!-- POSTS:END -->/,
     `<!-- POSTS:START -->${renderFeedList(posts)}\n<!-- POSTS:END -->`
   );
-  fs.writeFileSync(file, next);
+  fs.writeFileSync(file, withFooter(next, ''));
 };
 
 const writeFeed = (posts) => {
@@ -152,7 +159,7 @@ const build = () => {
     .filter(Boolean)
     .sort((a, b) => new Date(b.published) - new Date(a.published));
 
-  posts.forEach(stampReadingTime);
+  posts.forEach(renderPost);
   writeHomepage(posts);
   writeFeed(posts);
   console.log(`تم بناء ${toArabicDigits(posts.length)} خاطرة.`);

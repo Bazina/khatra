@@ -13,6 +13,7 @@
 ├── .nojekyll             ← تعطيل Jekyll على GitHub Pages
 ├── assets/css/khatra.css ← التنسيق المشترك
 ├── _template/index.html  ← قالب خاطرة جديدة (لا يُنشر)
+├── _template/footer.html ← تذييل مشترك يُحقن في كل الصفحات
 └── khatra-1/index.html   ← خاطرة
 ```
 
@@ -26,6 +27,8 @@ git add . && git commit -m "خاطرة رقم ٢" && git push
 ```
 
 `build.js` يقرأ من كل مقالة: `<title>`، `meta[name=description]`، `article:published_time`، `.kicker`، `.article-title`؛ ثم يحسب زمن القراءة ويكتبه في `<span class="rt">`، ويرتّب المقالات ويجمّعها بالسنة، ويكتب `index.html` و `feed.xml`.
+
+كما يحقن `_template/footer.html` في كل صفحة بين `FOOTER:START/END`؛ `{{BASE}}` يصير `../` داخل المقالات. لتعديل روابط التذييل، عدّل الملف الواحد ثم `node build.js`.
 
 الـ workflow يشغّل `build.js` عند كل push، فلا حاجة لتشغيله يدويًا — لكنه مفيد للمعاينة المحلية.
 

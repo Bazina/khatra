@@ -422,21 +422,52 @@ th{
 .site-footer{
   max-width:var(--measure);
   margin:0 auto;
-  padding:40px 28px 70px;
+  padding:44px 28px 44px;
   text-align:center;
   border-top:1px solid var(--line2);
 }
-.social{
-  display:flex;justify-content:center;gap:22px;flex-wrap:wrap;
-  font-family:var(--sans);font-size:0.76rem;font-weight:400;
-  color:var(--muted);
+.footer-ornament{
+  font-size:0.72rem;
+  color:var(--gold);
+  letter-spacing:0.5em;
+  text-indent:0.5em;
+  opacity:0.4;
+  margin-bottom:16px;
 }
-.social a{transition:color .2s ease}
-.social a:hover{color:var(--gold)}
-.colophon{
-  margin-top:18px;
-  font-family:var(--sans);font-size:0.7rem;font-weight:300;
-  color:var(--muted2);line-height:1.9;
+.footer-name{
+  font-family:var(--display);
+  font-size:1.05rem;
+  color:var(--ink);
+  margin-bottom:6px;
+}
+.footer-desc{
+  font-family:var(--sans);
+  font-size:0.7rem;
+  font-weight:300;
+  color:var(--muted);
+  margin-bottom:20px;
+}
+.footer-links{
+  display:flex;
+  gap:20px;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.footer-links a{
+  display:flex;
+  align-items:center;
+  color:var(--muted);
+  transition:color .2s ease,transform .2s ease;
+}
+.footer-links a:hover{color:var(--ink);transform:translateY(-2px)}
+.footer-meta{
+  margin-top:22px;
+  font-family:var(--sans);
+  font-size:0.65rem;
+  font-weight:300;
+  letter-spacing:0.03em;
+  color:var(--muted2);
 }
 
 /* ===== الحركة ===== */
@@ -458,5 +489,6 @@ th{
   .article-header{padding:48px 0 26px}
   .feed{padding:26px 22px 70px}
   .article{padding:0 22px 70px}
+  .site-footer{padding:34px 22px 38px}
   .entry:hover{transform:none}
 }
