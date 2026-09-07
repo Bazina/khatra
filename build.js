@@ -16,7 +16,7 @@ const SITE = {
 };
 
 const ROOT = __dirname;
-const SKIP = new Set(['assets', 'node_modules', '_template', '.git', '.github']);
+const SKIP = new Set(['assets', 'node_modules', '_template', '_editor', '.git', '.github']);
 
 const readingLabel = (minutes) => {
   const n = toArabicDigits(minutes);

@@ -283,6 +283,14 @@ blockquote cite{
 }
 
 /* اقتباس بارز */
+.pull-sub{
+  display:inline-block;
+  margin-top:8px;
+  font-family:var(--sans);
+  font-size:0.8rem;
+  font-weight:300;
+  color:var(--muted);
+}
 .pull{
   margin:2.6em 0;
   padding:26px 0;

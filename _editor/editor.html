@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>محرّر خاطرة</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf8f2;--panel:#f3f0e8;--ink:#241f1a;--ink2:#4a4238;
+  --muted:#8a8278;--gold:#8a7a5a;--burgundy:#6b1f2e;
+  --line:rgba(36,31,26,0.12);--line2:rgba(36,31,26,0.06);
+  --sans:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --display:'Aref Ruqaa',serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#15130f;--panel:#1c1913;--ink:#ece5d8;--ink2:#c9c0b0;
+    --muted:#8d8478;--gold:#c2ab7d;--burgundy:#c98a94;
+    --line:rgba(236,229,216,0.16);--line2:rgba(236,229,216,0.08);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:14px;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column;
+}
+button,input,textarea,select{font-family:inherit;color:inherit}
+
+.bar{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 18px;border-bottom:1px solid var(--line);
+  background:var(--panel);flex:none;
+}
+.brand{font-family:var(--display);font-size:19px;font-weight:700}
+.bar .spacer{flex:1}
+.bar select{
+  background:transparent;border:1px solid var(--line);border-radius:3px;
+  padding:6px 10px;font-size:12.5px;max-width:280px;
+}
+.btn{
+  border:1px solid var(--line);background:transparent;border-radius:3px;
+  padding:7px 15px;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+.btn:hover{border-color:var(--gold);background:rgba(138,122,90,.1)}
+.btn.primary{background:var(--burgundy);border-color:var(--burgundy);color:#faf8f2}
+.btn.primary:hover{opacity:.88;background:var(--burgundy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.split{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:0}
+.pane{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.pane.editor{border-left:1px solid var(--line)}
+
+.fields{
+  padding:14px 18px;display:grid;gap:9px;
+  grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line2);flex:none;
+}
+.field{display:flex;flex-direction:column;gap:4px}
+.field.wide{grid-column:1/-1}
+.field label{font-size:10.5px;font-weight:500;letter-spacing:.08em;color:var(--muted)}
+.field input{
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;
+  padding:7px 9px;font-size:13px;
+}
+.field input:focus{outline:none;border-color:var(--gold)}
+.field input[readonly]{opacity:.6}
+
+.tools{
+  display:flex;gap:6px;flex-wrap:wrap;
+  padding:9px 18px;border-bottom:1px solid var(--line2);flex:none;
+}
+.tools button{
+  border:1px solid var(--line2);background:transparent;border-radius:3px;
+  padding:5px 10px;font-size:11.5px;cursor:pointer;color:var(--ink2);
+}
+.tools button:hover{border-color:var(--gold);color:var(--ink)}
+
+textarea#body{
+  flex:1;width:100%;resize:none;border:0;outline:none;
+  background:transparent;padding:16px 18px;
+  font-family:'Amiri',serif;font-size:17px;line-height:1.95;
+}
+
+.preview-head{
+  padding:9px 18px;border-bottom:1px solid var(--line2);
+  font-size:11px;letter-spacing:.1em;color:var(--muted);flex:none;
+}
+iframe{flex:1;width:100%;border:0;background:var(--bg)}
+
+.status{
+  flex:none;padding:9px 18px;border-top:1px solid var(--line);
+  background:var(--panel);font-size:11.5px;color:var(--muted);
+  white-space:pre-wrap;max-height:118px;overflow:auto;font-variant-numeric:tabular-nums;
+}
+.status.err{color:var(--burgundy)}
+
+.help{
+  padding:12px 18px;border-top:1px solid var(--line2);
+  font-size:11px;line-height:2;color:var(--muted);flex:none;
+}
+.help code{
+  background:rgba(138,122,90,.14);padding:1px 5px;border-radius:2px;
+  font-family:ui-monospace,Menlo,monospace;font-size:10.5px;direction:ltr;
+  unicode-bidi:isolate;display:inline-block;
+}
+@media (max-width:900px){
+  .split{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  .pane.editor{border-left:0;border-bottom:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="brand">محرّر خاطرة</div>
+  <select id="picker"><option value="">— خاطرة جديدة —</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="save">حفظ ومعاينة</button>
+  <button class="btn primary" id="publish">نشر</button>
+</div>
+
+<div class="split">
+
+  <section class="pane editor">
+    <div class="fields">
+      <div class="field"><label>الترويسة</label><input id="kicker"></div>
+      <div class="field"><label>المُعرّف (رابط)</label><input id="slug"></div>
+      <div class="field wide"><label>العنوان</label><input id="title"></div>
+      <div class="field wide"><label>الافتتاحية</label><input id="standfirst"></div>
+      <div class="field wide"><label>الوصف (للفهرس وروابط المشاركة)</label><input id="description"></div>
+      <div class="field"><label>التصنيف</label><input id="section"></div>
+      <div class="field"><label>التاريخ</label><input id="published" type="date"></div>
+    </div>
+
+    <div class="tools" id="tools">
+      <button data-wrap="**|**">غامق</button>
+      <button data-wrap="_|_">ملوّن</button>
+      <button data-wrap="`|`">code</button>
+      <button data-wrap="[|](رابط)">رابط</button>
+      <button data-line="## ">عنوان</button>
+      <button data-line="### ">عنوان صغير</button>
+      <button data-line="!! ">اقتباس بارز</button>
+      <button data-line="> ">نقل</button>
+      <button data-line=":: تعريف | ">تعريف</button>
+      <button data-line="- ">قائمة</button>
+      <button data-block="---">فاصل</button>
+      <button data-block="&lt;&lt;&lt;&#10;&#10;&gt;&gt;&gt;">HTML خام</button>
+    </div>
+
+    <textarea id="body" spellcheck="false" placeholder="اكتب هنا…"></textarea>
+
+    <div class="help">
+      <code>## عنوان</code> · <code>!! اقتباس بارز</code> · <code>!!~ سطر تحته</code> · <code>&gt; نقل</code> ثم <code>&gt;— القائل</code> · <code>:: عنوان | نص</code> · <code>---</code> فاصل · <code>^١ حاشية</code> · <code>&lt;&lt;&lt; … &gt;&gt;&gt;</code> HTML خام للتجارب التفاعلية
+    </div>
+  </section>
+
+  <section class="pane">
+    <div class="preview-head">معاينة حيّة</div>
+    <iframe id="preview" title="معاينة"></iframe>
+  </section>
+
+</div>
+
+<div class="status" id="status">جاهز.</div>
+
+<script src="/_editor/markup.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const FIELDS = ['kicker','slug','title','standfirst','description','section','published'];
+const statusBox = $('status');
+let meta = { nextNumberArabic: '١', nextNumber: 1, today: '' };
+
+const say = (text, isError) => {
+  statusBox.textContent = text;
+  statusBox.classList.toggle('err', Boolean(isError));
+};
+
+const draft = () => {
+  const value = { body: $('body').value };
+  FIELDS.forEach((id) => { value[id] = $(id).value.trim(); });
+  return value;
+};
+
+const arabicDate = (iso) => {
+  if (!iso) return '';
+  return new Intl.DateTimeFormat('ar-EG-u-nu-arab', {
+    year:'numeric', month:'long', day:'numeric', timeZone:'UTC'
+  }).format(new Date(iso + 'T00:00:00Z'));
+};
+
+const previewDoc = (d) => `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/khatra.css"></head><body>
+<article class="article">
+  <header class="article-header">
+    <div class="kicker">${d.kicker || ''}</div>
+    <h1 class="article-title">${d.title || 'بلا عنوان'}</h1>
+    <p class="article-standfirst">${d.standfirst || ''}</p>
+    <div class="article-meta">${arabicDate(d.published)}</div>
+  </header>
+  <div class="prose">
+    ${khatraMarkup.toHtml(d.body)}
+  </div>
+</article></body></html>`;
+
+let timer;
+const refresh = () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => { $('preview').srcdoc = previewDoc(draft()); }, 220);
+};
+
+const insertLine = (prefix) => {
+  const area = $('body');
+  const start = area.value.lastIndexOf('\n', area.selectionStart - 1) + 1;
+  area.value = area.value.slice(0, start) + prefix + area.value.slice(start);
+  area.focus();
+  area.selectionStart = area.selectionEnd = start + prefix.length;
+  refresh();
+};
+
+const insertWrap = (pattern) => {
+  const area = $('body');
+  const [before, after] = pattern.split('|');
+  const { selectionStart: from, selectionEnd: to } = area;
+  const picked = area.value.slice(from, to);
+  area.value = area.value.slice(0, from) + before + picked + after + area.value.slice(to);
+  area.focus();
+  area.selectionStart = from + before.length;
+  area.selectionEnd = area.selectionStart + picked.length;
+  refresh();
+};
+
+const insertBlock = (text) => {
+  const area = $('body');
+  const at = area.selectionStart;
+  const block = `\n\n${text}\n\n`;
+  area.value = area.value.slice(0, at) + block + area.value.slice(at);
+  area.focus();
+  area.selectionStart = area.selectionEnd = at + block.length;
+  refresh();
+};
+
+$('tools').addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.dataset.wrap) insertWrap(button.dataset.wrap);
+  else if (button.dataset.line) insertLine(button.dataset.line);
+  else if (button.dataset.block) insertBlock(button.dataset.block);
+});
+
+const post = async (route, payload) => {
+  const response = await fetch(route, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'خطأ');
+  return data;
+};
+
+const withBusy = async (button, label, work) => {
+  button.disabled = true;
+  say(label);
+  try {
+    const data = await work();
+    say(data.log || 'تم.');
+  } catch (error) {
+    say(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+};
+
+$('save').onclick = () =>
+  withBusy($('save'), 'جارٍ الحفظ…', async () => {
+    const data = await post('/api/save', draft());
+    await loadIndex($('slug').value);
+    return data;
+  });
+
+$('publish').onclick = () => {
+  if (!confirm('نشر على GitHub؟ سيُبنى الموقع ويُدفع إلى main.')) return;
+  withBusy($('publish'), 'جارٍ النشر…', async () => {
+    const data = await post('/api/publish', draft());
+    await loadIndex($('slug').value);
+    return data;
+  });
+};
+
+const blankDraft = () => {
+  $('kicker').value = `خاطرة رقم ${meta.nextNumberArabic}`;
+  $('slug').value = `khatra-${meta.nextNumber}`;
+  $('title').value = '';
+  $('standfirst').value = '';
+  $('description').value = '';
+  $('section').value = 'خواطر';
+  $('published').value = meta.today;
+  $('body').value = '';
+  refresh();
+};
+
+const openPost = async (slug) => {
+  const response = await fetch(`/api/post?slug=${encodeURIComponent(slug)}`);
+  const data = await response.json();
+  if (!response.ok) return say(data.error, true);
+  FIELDS.forEach((id) => { $(id).value = data[id] || ''; });
+  $('body').value = data.body;
+  refresh();
+  say(data.editable
+    ? `فُتحت ${slug}.`
+    : `${slug} كُتبت يدويًا — لا يوجد source.txt، والنشر سيستبدل الصفحة بالكامل.`, !data.editable);
+};
+
+const loadIndex = async (keepSlug) => {
+  const data = await (await fetch('/api/posts')).json();
+  meta = data;
+  const picker = $('picker');
+  picker.innerHTML = '<option value="">— خاطرة جديدة —</option>' +
+    data.posts.map((p) => `<option value="${p.slug}">${p.kicker} · ${p.title}</option>`).join('');
+  if (keepSlug) picker.value = keepSlug;
+};
+
+$('picker').onchange = (event) => {
+  if (event.target.value) openPost(event.target.value);
+  else blankDraft();
+};
+
+FIELDS.concat('body').forEach((id) => $(id).addEventListener('input', refresh));
+
+addEventListener('keydown', (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+    event.preventDefault();
+    $('save').click();
+  }
+});
+
+loadIndex().then(blankDraft);
+</script>
+
+</body>
+</html>
