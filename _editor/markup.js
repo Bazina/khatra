@@ -68,6 +68,14 @@
     return `<div class="pull">${inline(main)}${tail}</div>`;
   };
 
+  const readDefBlock = (reader) => {
+    const label = reader.next().replace(/^:::\s?/, '').trim();
+    const body = reader.takeWhile((line) => line.trim() !== ':::');
+    if (!reader.done()) reader.next();
+    const heading = label ? `\n      <div class="def-label">${inline(label)}</div>` : '';
+    return `<div class="def">${heading}\n      ${toHtml(body.join('\n'))}\n    </div>`;
+  };
+
   const readDef = (reader) => {
     const [label, ...rest] = reader.next().replace(/^::\s?/, '').split('|');
     return `<div class="def">\n      <div class="def-label">${inline(label.trim())}</div>\n      <p>${inline(rest.join('|').trim())}</p>\n    </div>`;
@@ -107,6 +115,7 @@
     if (line.startsWith('### ')) return `<h3>${inline(reader.next().slice(4))}</h3>`;
     if (line.startsWith('## ')) return `<h2>${inline(reader.next().slice(3))}</h2>`;
     if (line.startsWith('!!')) return readPull(reader);
+    if (line.startsWith(':::')) return readDefBlock(reader);
     if (line.startsWith('::')) return readDef(reader);
     if (line.startsWith('>')) return readQuote(reader);
     if (line.startsWith('^')) return readNotes(reader);

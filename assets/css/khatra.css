@@ -318,6 +318,14 @@ blockquote cite{
   margin-bottom:8px;
 }
 .def p{font-size:0.98rem;line-height:1.85;color:var(--ink2)}
+.def p + p,
+.def ul,.def ol,
+.def blockquote{margin-top:0.9em}
+.def ul,.def ol{margin-right:1.3em;margin-bottom:0}
+.def li{font-size:0.98rem;line-height:1.85;color:var(--ink2);margin-bottom:0.3em}
+.def li:last-child{margin-bottom:0}
+.def h3{margin:1.1em 0 0.4em;font-size:0.95rem}
+.def blockquote{margin-bottom:0}
 
 /* صندوق تفاعلي */
 .demo{
