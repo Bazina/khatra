@@ -14,6 +14,7 @@ const markup = require('./_editor/markup.js');
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 4000);
 const HOST = '127.0.0.1';
+const DRAFTS = path.join(ROOT, '_editor', 'drafts');
 const SKIP = new Set(['assets', 'node_modules', '_template', '_editor', '.git', '.github']);
 
 const MIME = {
@@ -24,6 +25,33 @@ const MIME = {
   '.xml': 'application/xml; charset=utf-8',
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
 };
+
+const draftFile = (slug) => {
+  if (!/^[a-z0-9-]+$/.test(String(slug || ''))) throw new Error('مُعرّف غير صالح');
+  return path.join(DRAFTS, `${slug}.json`);
+};
+
+const saveAutodraft = (draft) => {
+  fs.mkdirSync(DRAFTS, { recursive: true });
+  const record = { ...draft, savedAt: new Date().toISOString() };
+  fs.writeFileSync(draftFile(draft.slug), JSON.stringify(record, null, 2));
+  return record.savedAt;
+};
+
+const loadAutodraft = (slug) => {
+  const file = draftFile(slug);
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+};
+
+const dropAutodraft = (slug) => {
+  const file = draftFile(slug);
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+};
+
+const listAutodrafts = () =>
+  (fs.existsSync(DRAFTS) ? fs.readdirSync(DRAFTS) : [])
+    .filter((name) => name.endsWith('.json'))
+    .map((name) => name.slice(0, -5));
 
 const toArabicDigits = (value) =>
   String(value).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)]);
@@ -233,12 +261,24 @@ const serveFile = (res, filePath) => {
 const routes = {
   'GET /api/posts': async () => ({
     posts: listPostDirs().map(describePost).sort((a, b) => (a.published < b.published ? 1 : -1)),
+    drafts: listAutodrafts(),
     nextNumber: nextNumber(),
     nextNumberArabic: toArabicDigits(nextNumber()),
     today: new Date().toISOString().slice(0, 10),
   }),
-  'POST /api/save': async (body) => ({ ok: true, dir: path.basename(saveDraft(body)), log: await build() }),
-  'POST /api/publish': async (body) => ({ ok: true, log: await publish(body) }),
+  'POST /api/save': async (body) => {
+    const dir = path.basename(saveDraft(body));
+    const log = await build();
+    dropAutodraft(body.slug);
+    return { ok: true, dir, log };
+  },
+  'POST /api/publish': async (body) => {
+    const log = await publish(body);
+    dropAutodraft(body.slug);
+    return { ok: true, log };
+  },
+  'POST /api/draft': async (body) => ({ ok: true, savedAt: saveAutodraft(body) }),
+  'POST /api/draft/drop': async (body) => { dropAutodraft(body.slug); return { ok: true }; },
 };
 
 const server = http.createServer(async (req, res) => {
@@ -246,6 +286,10 @@ const server = http.createServer(async (req, res) => {
   const key = `${req.method} ${url.pathname}`;
 
   if (key === 'GET /') return serveFile(res, path.join(ROOT, '_editor', 'editor.html'));
+  if (key === 'GET /api/draft') {
+    try { return sendJson(res, 200, { draft: loadAutodraft(url.searchParams.get('slug')) }); }
+    catch (e) { return sendJson(res, 400, { error: e.message }); }
+  }
   if (key === 'GET /api/post') {
     try { return sendJson(res, 200, loadDraft(url.searchParams.get('slug'))); }
     catch (e) { return sendJson(res, 404, { error: e.message }); }

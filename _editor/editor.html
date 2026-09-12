@@ -51,6 +51,8 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .btn.primary{background:var(--burgundy);border-color:var(--burgundy);color:#faf8f2}
 .btn.primary:hover{opacity:.88;background:var(--burgundy)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+.autosave{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.autosave.restored{color:var(--gold)}
 
 .split{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:0}
 .pane{min-height:0;display:flex;flex-direction:column;overflow:hidden}
@@ -120,6 +122,8 @@ iframe{flex:1;width:100%;border:0;background:var(--bg)}
   <div class="brand">محرّر خاطرة</div>
   <select id="picker"><option value="">— خاطرة جديدة —</option></select>
   <div class="spacer"></div>
+  <span class="autosave" id="autosave"></span>
+  <button class="btn" id="discard" hidden>تجاهل المسودة</button>
   <button class="btn" id="save">حفظ ومعاينة</button>
   <button class="btn primary" id="publish">نشر</button>
 </div>
@@ -174,7 +178,19 @@ iframe{flex:1;width:100%;border:0;background:var(--bg)}
 const $ = (id) => document.getElementById(id);
 const FIELDS = ['kicker','slug','title','standfirst','description','section','published'];
 const statusBox = $('status');
-let meta = { nextNumberArabic: '١', nextNumber: 1, today: '' };
+let meta = { nextNumberArabic: '١', nextNumber: 1, today: '', drafts: [] };
+let autosaveTimer;
+
+const clock = (iso) =>
+  new Intl.DateTimeFormat('ar-EG-u-nu-arab', { hour: '2-digit', minute: '2-digit' })
+    .format(new Date(iso));
+
+const markAutosave = (text, restored) => {
+  const box = $('autosave');
+  box.textContent = text;
+  box.classList.toggle('restored', Boolean(restored));
+  $('discard').hidden = !text;
+};
 
 const say = (text, isError) => {
   statusBox.textContent = text;
@@ -215,6 +231,25 @@ let timer;
 const refresh = () => {
   clearTimeout(timer);
   timer = setTimeout(() => { $('preview').srcdoc = previewDoc(draft()); }, 220);
+  scheduleAutosave();
+};
+
+const hasContent = (d) => Boolean(d.title.trim() || d.body.trim());
+
+const autosave = async () => {
+  const d = draft();
+  if (!hasContent(d) || !/^[a-z0-9-]+$/.test(d.slug)) return;
+  try {
+    const data = await post('/api/draft', d);
+    markAutosave(`مسودة محفوظة ${clock(data.savedAt)}`);
+  } catch (error) {
+    markAutosave('تعذّر حفظ المسودة');
+  }
+};
+
+const scheduleAutosave = () => {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(autosave, 1200);
 };
 
 const insertLine = (prefix) => {
@@ -296,7 +331,22 @@ $('publish').onclick = () => {
   });
 };
 
-const blankDraft = () => {
+const applyDraft = (data) => {
+  FIELDS.forEach((id) => { $(id).value = data[id] || ''; });
+  $('body').value = data.body || '';
+  refresh();
+};
+
+const restoreIfDrafted = async (slug) => {
+  const { draft: saved } = await (await fetch(`/api/draft?slug=${encodeURIComponent(slug)}`)).json();
+  if (!saved) { markAutosave(''); return false; }
+  applyDraft(saved);
+  clearTimeout(autosaveTimer);
+  markAutosave(`استُعيدت مسودة ${clock(saved.savedAt)}`, true);
+  return true;
+};
+
+const blankDraft = async () => {
   $('kicker').value = `خاطرة رقم ${meta.nextNumberArabic}`;
   $('slug').value = `khatra-${meta.nextNumber}`;
   $('title').value = '';
@@ -306,15 +356,19 @@ const blankDraft = () => {
   $('published').value = meta.today;
   $('body').value = '';
   refresh();
+  clearTimeout(autosaveTimer);
+  markAutosave('');
+  await restoreIfDrafted($('slug').value);
 };
 
 const openPost = async (slug) => {
   const response = await fetch(`/api/post?slug=${encodeURIComponent(slug)}`);
   const data = await response.json();
   if (!response.ok) return say(data.error, true);
-  FIELDS.forEach((id) => { $(id).value = data[id] || ''; });
-  $('body').value = data.body;
-  refresh();
+  applyDraft(data);
+  clearTimeout(autosaveTimer);
+  markAutosave('');
+  if (await restoreIfDrafted(slug)) return;
   say(data.editable
     ? `فُتحت ${slug}.`
     : `${slug} كُتبت يدويًا — لا يوجد source.txt، والنشر سيستبدل الصفحة بالكامل.`, !data.editable);
@@ -324,10 +378,30 @@ const loadIndex = async (keepSlug) => {
   const data = await (await fetch('/api/posts')).json();
   meta = data;
   const picker = $('picker');
+  const drafted = new Set(data.drafts || []);
   picker.innerHTML = '<option value="">— خاطرة جديدة —</option>' +
-    data.posts.map((p) => `<option value="${p.slug}">${p.kicker} · ${p.title}</option>`).join('');
+    data.posts.map((p) =>
+      `<option value="${p.slug}">${drafted.has(p.slug) ? '● ' : ''}${p.kicker} · ${p.title}</option>`).join('');
   if (keepSlug) picker.value = keepSlug;
 };
+
+$('discard').onclick = async () => {
+  if (!confirm('تجاهل المسودة المحفوظة والعودة إلى النص المنشور؟')) return;
+  const slug = $('slug').value;
+  clearTimeout(autosaveTimer);
+  await post('/api/draft/drop', { slug });
+  markAutosave('');
+  const picked = $('picker').value;
+  if (picked) await openPost(picked); else await blankDraft();
+  await loadIndex(picked);
+  say('حُذفت المسودة.');
+};
+
+addEventListener('beforeunload', () => {
+  const d = draft();
+  if (!hasContent(d) || !/^[a-z0-9-]+$/.test(d.slug)) return;
+  navigator.sendBeacon('/api/draft', new Blob([JSON.stringify(d)], { type: 'application/json' }));
+});
 
 $('picker').onchange = (event) => {
   if (event.target.value) openPost(event.target.value);
