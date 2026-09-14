@@ -253,7 +253,8 @@ const previewDoc = (d) => `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/khatra.css"></head><body>
+<link rel="stylesheet" href="/assets/css/khatra.css">
+<style>html{scroll-behavior:auto}*{animation:none!important;transition:none!important}</style></head><body>
 <article class="article">
   <header class="article-header">
     <div class="kicker">${d.kicker || ''}</div>
@@ -267,6 +268,7 @@ const previewDoc = (d) => `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta 
 </article></body></html>`;
 
 let previewRatio = 0;
+let syncing = false;
 
 const ratioOf = (el) => {
   const span = el.scrollHeight - el.clientHeight;
@@ -283,17 +285,37 @@ const previewRoot = () => {
   catch (error) { return null; }
 };
 
+const scrollPreviewTo = (ratio) => {
+  previewRatio = Math.min(1, Math.max(0, ratio));
+  const root = previewRoot();
+  if (!root) return;
+  syncing = true;
+  applyRatio(root, previewRatio);
+  requestAnimationFrame(() => { syncing = false; });
+};
+
+const caretRatio = () => {
+  const area = $('body');
+  const length = area.value.length;
+  return length ? area.selectionStart / length : 0;
+};
+
 $('preview').addEventListener('load', () => {
   const root = previewRoot();
   if (!root) return;
   applyRatio(root, previewRatio);
   $('preview').contentWindow.addEventListener('scroll', () => {
+    if (syncing) return;
     previewRatio = ratioOf(root);
+    syncing = true;
+    applyRatio($('body'), previewRatio);
+    requestAnimationFrame(() => { syncing = false; });
   }, { passive: true });
 });
 
 let timer;
-const refresh = () => {
+const refresh = (follow) => {
+  if (follow) previewRatio = caretRatio();
   clearTimeout(timer);
   timer = setTimeout(() => { $('preview').srcdoc = previewDoc(draft()); }, 220);
   scheduleAutosave();
@@ -323,7 +345,7 @@ const insertLine = (prefix) => {
   area.value = area.value.slice(0, start) + prefix + area.value.slice(start);
   area.focus();
   area.selectionStart = area.selectionEnd = start + prefix.length;
-  refresh();
+  refresh(true);
 };
 
 const insertWrap = (pattern) => {
@@ -335,7 +357,7 @@ const insertWrap = (pattern) => {
   area.focus();
   area.selectionStart = from + before.length;
   area.selectionEnd = area.selectionStart + picked.length;
-  refresh();
+  refresh(true);
 };
 
 const insertBlock = (text) => {
@@ -345,7 +367,7 @@ const insertBlock = (text) => {
   area.value = area.value.slice(0, at) + block + area.value.slice(at);
   area.focus();
   area.selectionStart = area.selectionEnd = at + block.length;
-  refresh();
+  refresh(true);
 };
 
 $('tools').addEventListener('click', (event) => {
@@ -477,7 +499,15 @@ $('picker').onchange = (event) => {
 
 FIELDS.forEach((id) => $(id).addEventListener('input', () => refresh()));
 
-$('body').addEventListener('input', () => refresh());
+$('body').addEventListener('input', () => refresh(true));
+
+$('body').addEventListener('scroll', () => {
+  if (syncing) return;
+  scrollPreviewTo(ratioOf($('body')));
+}, { passive: true });
+
+['click', 'keyup'].forEach((event) =>
+  $('body').addEventListener(event, () => scrollPreviewTo(caretRatio())));
 
 const remember = (key, value) => localStorage.setItem(`khatra:${key}`, value ? '1' : '0');
 const recall = (key, fallback) => {
