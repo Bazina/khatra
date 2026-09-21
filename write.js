@@ -15,6 +15,7 @@ const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 4000);
 const HOST = '127.0.0.1';
 const DRAFTS = path.join(ROOT, '_editor', 'drafts');
+const HISTORY = path.join(DRAFTS, 'history');
 const SKIP = new Set(['assets', 'node_modules', '_template', '_editor', '.git', '.github']);
 
 const MIME = {
@@ -31,11 +32,36 @@ const draftFile = (slug) => {
   return path.join(DRAFTS, `${slug}.json`);
 };
 
+const stamp = (iso) => iso.replace(/[-:]/g, '').replace(/\.\d+Z$/, '');
+
+const archive = (slug, record, kind) => {
+  fs.mkdirSync(HISTORY, { recursive: true });
+  const suffix = kind ? `${kind}-` : '';
+  const file = path.join(HISTORY, `${slug}.${suffix}${stamp(record.savedAt)}.json`);
+  fs.writeFileSync(file, JSON.stringify(record, null, 2));
+  return path.basename(file);
+};
+
+/**
+ * يكتب المسودة ما لم تكن النسخة على القرص أحدث من النسخة التي بنى عليها المحرّر.
+ * الكتابة المتأخّرة (من تبويب قديم يُغلق) تُحفظ جانبًا ولا تمسح الأحدث.
+ */
 const saveAutodraft = (draft) => {
   fs.mkdirSync(DRAFTS, { recursive: true });
+  const file = draftFile(draft.slug);
+  const existing = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+  const base = draft.baseSavedAt || '';
   const record = { ...draft, savedAt: new Date().toISOString() };
-  fs.writeFileSync(draftFile(draft.slug), JSON.stringify(record, null, 2));
-  return record.savedAt;
+  delete record.baseSavedAt;
+
+  if (existing && existing.savedAt > base) {
+    const kept = archive(draft.slug, record, 'conflict');
+    return { stale: true, savedAt: existing.savedAt, kept };
+  }
+
+  fs.writeFileSync(file, JSON.stringify(record, null, 2));
+  archive(draft.slug, record);
+  return { stale: false, savedAt: record.savedAt };
 };
 
 const loadAutodraft = (slug) => {
@@ -45,7 +71,9 @@ const loadAutodraft = (slug) => {
 
 const dropAutodraft = (slug) => {
   const file = draftFile(slug);
-  if (fs.existsSync(file)) fs.unlinkSync(file);
+  if (!fs.existsSync(file)) return;
+  archive(slug, JSON.parse(fs.readFileSync(file, 'utf8')), 'dropped');
+  fs.unlinkSync(file);
 };
 
 const listAutodrafts = () =>
@@ -277,7 +305,7 @@ const routes = {
     dropAutodraft(body.slug);
     return { ok: true, log };
   },
-  'POST /api/draft': async (body) => ({ ok: true, savedAt: saveAutodraft(body) }),
+  'POST /api/draft': async (body) => ({ ok: true, ...saveAutodraft(body) }),
   'POST /api/draft/drop': async (body) => { dropAutodraft(body.slug); return { ok: true }; },
 };
 

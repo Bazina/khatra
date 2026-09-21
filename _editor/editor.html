@@ -219,6 +219,7 @@ const FIELDS = ['kicker','slug','title','standfirst','description','section','pu
 const statusBox = $('status');
 let meta = { nextNumberArabic: '١', nextNumber: 1, today: '', drafts: [] };
 let autosaveTimer;
+let baseSavedAt = null;
 
 const clock = (iso) =>
   new Intl.DateTimeFormat('ar-EG-u-nu-arab', { hour: '2-digit', minute: '2-digit' })
@@ -306,7 +307,15 @@ const autosave = async () => {
   const d = draft();
   if (!hasContent(d) || !/^[a-z0-9-]+$/.test(d.slug)) return;
   try {
-    const data = await post('/api/draft', d);
+    const data = await post('/api/draft', { ...d, baseSavedAt });
+    if (data.stale) {
+      markAutosave(`نسخة أحدث على القرص (${clock(data.savedAt)}) — لم يُكتب فوقها`);
+      say(`هذا التبويب قديم: توجد مسودة أحدث محفوظة ${clock(data.savedAt)}.\n`
+        + `ما كتبتَه هنا حُفظ جانبًا في _editor/drafts/history/${data.kept} ولم يُمسح الأحدث.\n`
+        + 'أعد تحميل الصفحة لفتح النسخة الأحدث.', true);
+      return;
+    }
+    baseSavedAt = data.savedAt;
     markAutosave(`مسودة محفوظة ${clock(data.savedAt)}`);
   } catch (error) {
     markAutosave('تعذّر حفظ المسودة');
@@ -407,9 +416,10 @@ const applyDraft = (data) => {
 
 const restoreIfDrafted = async (slug) => {
   const { draft: saved } = await (await fetch(`/api/draft?slug=${encodeURIComponent(slug)}`)).json();
-  if (!saved) { markAutosave(''); return false; }
+  if (!saved) { baseSavedAt = null; markAutosave(''); return false; }
   applyDraft(saved);
   clearTimeout(autosaveTimer);
+  baseSavedAt = saved.savedAt;
   markAutosave(`استُعيدت مسودة ${clock(saved.savedAt)}`, true);
   return true;
 };
@@ -458,6 +468,7 @@ $('discard').onclick = async () => {
   const slug = $('slug').value;
   clearTimeout(autosaveTimer);
   await post('/api/draft/drop', { slug });
+  baseSavedAt = null;
   markAutosave('');
   const picked = $('picker').value;
   if (picked) await openPost(picked); else await blankDraft();
@@ -468,7 +479,8 @@ $('discard').onclick = async () => {
 addEventListener('beforeunload', () => {
   const d = draft();
   if (!hasContent(d) || !/^[a-z0-9-]+$/.test(d.slug)) return;
-  navigator.sendBeacon('/api/draft', new Blob([JSON.stringify(d)], { type: 'application/json' }));
+  const payload = JSON.stringify({ ...d, baseSavedAt });
+  navigator.sendBeacon('/api/draft', new Blob([payload], { type: 'application/json' }));
 });
 
 $('picker').onchange = (event) => {
